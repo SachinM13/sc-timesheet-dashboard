@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timesheet Issues · Student Cribs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --black: #0A0A0A;
+  --ink: #1A1A1A;
+  --paper: #FAFAF7;
+  --paper-2: #F0EFEA;
+  --yellow: #FFCC00;
+  --yellow-soft: #FFF4D1;
+  --green: #18706E;
+  --green-soft: #C8E6E5;
+  --red: #B71C1C;
+  --red-soft: #FCE5E5;
+  --amber: #FF8F00;
+  --amber-soft: #FFF8E1;
+  --grey-line: #E0DFD9;
+  --grey-border: #B5B5B0;
+  --grey-text: #6A6A66;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: 'Poppins', -apple-system, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 14px; line-height: 1.55;
+  background-image:
+    linear-gradient(to right, rgba(0,0,0,0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.025) 1px, transparent 1px);
+  background-size: 64px 64px;
+  background-attachment: fixed;
+}
+
+a { color: var(--green); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* TOPBAR */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--black); color: var(--paper);
+  border-bottom: 3px solid var(--yellow);
+  padding: 12px 28px;
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+}
+.topbar .brand {
+  font-family: 'Fraunces', serif; font-weight: 700;
+  font-size: 18px; letter-spacing: -0.3px;
+  display: flex; align-items: center; gap: 10px;
+}
+.topbar .brand .dot {
+  width: 9px; height: 9px; background: var(--yellow); border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255,204,0,0.25);
+}
+.topbar .period {
+  color: var(--yellow);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing: 0.5px;
+  padding: 4px 10px; border: 1px solid rgba(255,204,0,0.4);
+}
+.topbar .crumb {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: rgba(250,250,247,0.55);
+  letter-spacing: 1px; text-transform: uppercase;
+  margin-left: auto;
+}
+
+/* SHELL */
+.shell {
+  display: grid; grid-template-columns: 220px 1fr;
+  max-width: 1480px; margin: 0 auto;
+}
+
+.sidenav {
+  position: sticky; top: 51px; align-self: start;
+  height: calc(100vh - 51px); overflow-y: auto;
+  padding: 36px 24px 24px;
+  border-right: 1px solid var(--grey-line);
+}
+.sidenav h4 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--grey-text); margin: 0 0 14px;
+}
+.sidenav a {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 7px 0 7px 12px; color: var(--ink);
+  font-size: 13px;
+  border-left: 2px solid transparent;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.sidenav a:hover { border-left-color: var(--yellow); color: var(--black); text-decoration: none; }
+.sidenav a.nav-active { border-left-color: var(--yellow); font-weight: 600; background: var(--yellow-soft); }
+.sidenav a .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--grey-text); min-width: 22px;
+}
+
+main { padding: 32px 56px 96px; min-width: 0; }
+
+/* HERO */
+.hero {
+  background: var(--black); color: var(--paper);
+  padding: 56px 64px;
+  margin: -32px -56px 56px;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ""; position: absolute; right: -160px; top: -120px;
+  width: 480px; height: 480px;
+  background: radial-gradient(circle, var(--yellow) 0%, transparent 65%);
+  opacity: 0.22; pointer-events: none;
+}
+.hero::after {
+  content: ""; position: absolute; inset: 0;
+  background-image: linear-gradient(to right, rgba(255,204,0,0.04) 1px, transparent 1px);
+  background-size: 32px 100%;
+  pointer-events: none;
+}
+.hero-grid {
+  display: grid; grid-template-columns: 1.4fr 1fr; gap: 56px; align-items: end;
+  position: relative; z-index: 1;
+}
+.hero .kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 2.5px;
+  color: var(--yellow); opacity: 0.85;
+  margin-bottom: 20px; padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,204,0,0.25);
+  display: inline-block;
+}
+.hero h1 {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(80px, 13vw, 200px);
+  font-weight: 600; line-height: 0.88; margin: 0;
+  letter-spacing: -4px;
+  color: var(--yellow);
+  font-variant-numeric: tabular-nums;
+}
+.hero h1 .unit {
+  color: var(--paper); font-size: 0.42em;
+  letter-spacing: -2px; margin-left: 6px; font-weight: 400;
+}
+.hero .lede {
+  font-family: 'Fraunces', serif; font-style: italic;
+  font-size: 19px; line-height: 1.4;
+  max-width: 520px; margin-top: 28px;
+  color: rgba(250,250,247,0.85);
+}
+.hero-stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 28px 32px;
+  padding-bottom: 8px;
+}
+.hero-stat { border-left: 2px solid rgba(255,204,0,0.4); padding-left: 14px; }
+.hero-stat .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: rgba(250,250,247,0.55); margin-bottom: 4px;
+}
+.hero-stat .value {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: 36px; line-height: 1.05; color: var(--paper);
+  font-variant-numeric: tabular-nums;
+}
+.hero-stat .sub {
+  font-size: 11px; color: rgba(250,250,247,0.5);
+  margin-top: 2px; font-family: 'JetBrains Mono', monospace;
+}
+
+/* SECTIONS */
+section { margin-bottom: 72px; scroll-margin-top: 68px; }
+section .section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--grey-text);
+  letter-spacing: 1.5px; text-transform: uppercase;
+  display: inline-block; margin-bottom: 6px;
+  padding-bottom: 4px; border-bottom: 1px solid var(--grey-line);
+}
+section h2 {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: 36px; line-height: 1.05; letter-spacing: -1px;
+  margin: 4px 0 12px;
+}
+section .dek {
+  font-family: 'Fraunces', serif; font-style: italic;
+  font-size: 16px; color: var(--grey-text);
+  max-width: 680px; margin-bottom: 28px; line-height: 1.5;
+}
+
+/* KPI TILES */
+.kpi-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px; margin-bottom: 28px;
+}
+.kpi {
+  background: white; border: 1px solid var(--grey-line);
+  padding: 18px 20px; box-shadow: var(--shadow-sm);
+  border-left: 4px solid var(--grey-border);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.kpi:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.06); }
+.kpi.feature { border-left-color: var(--yellow); }
+.kpi.green { border-left-color: var(--green); }
+.kpi.red { border-left-color: var(--red); }
+.kpi.amber { border-left-color: var(--amber); }
+.kpi .lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--grey-text);
+}
+.kpi .val {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: 36px; line-height: 1; margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.kpi .sub {
+  font-size: 11px; color: var(--grey-text); margin-top: 4px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ALERT CALLOUT */
+.callout-red {
+  background: var(--red-soft);
+  border-left: 4px solid var(--red);
+  padding: 16px 20px;
+  margin-bottom: 28px;
+  display: flex; align-items: flex-start; gap: 14px;
+}
+.callout-red .cr-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--red); font-weight: 600; white-space: nowrap;
+  margin-top: 2px;
+}
+.callout-red .cr-body { font-size: 13px; line-height: 1.6; }
+.callout-red .cr-body strong { color: var(--red); }
+
+/* GRID 2 */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+
+/* PANELS */
+.panel {
+  background: white; border: 1px solid var(--grey-line);
+  padding: 20px 24px; margin-bottom: 16px;
+}
+.panel-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--grey-text); margin-bottom: 14px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--grey-line);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.panel-title span { font-family: 'Fraunces', serif; font-size: 14px; color: var(--grey-text); font-style: italic; font-weight: 400; text-transform: none; letter-spacing: 0; }
+.chart-wrap { position: relative; }
+
+/* TABLES */
+.table-scroll { overflow-x: auto; background: white; border: 1px solid var(--grey-line); }
+table.data {
+  width: 100%; border-collapse: collapse; background: white; font-size: 13px;
+}
+table.data thead th {
+  text-align: left; font-weight: 600;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--grey-text);
+  padding: 12px 14px;
+  border-bottom: 2px solid var(--ink);
+  background: var(--paper-2);
+  white-space: nowrap;
+}
+table.data thead th.num { text-align: right; }
+table.data tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--grey-line);
+  vertical-align: middle;
+}
+table.data tbody tr:hover { background: var(--yellow-soft); }
+table.data .num {
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+table.data .rank {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--grey-text); font-weight: 500;
+}
+td.metric {
+  font-family: 'JetBrains Mono', monospace;
+  text-align: right; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+td.metric.bad { background: var(--red-soft); color: var(--red); }
+td.metric.warn { background: var(--amber-soft); color: var(--amber); }
+td.metric.ok { background: var(--green-soft); color: var(--green); }
+
+/* PILLS */
+.pill {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; padding: 3px 8px; letter-spacing: 0.8px;
+  font-weight: 700; text-transform: uppercase;
+}
+.pill-red { background: var(--red); color: white; }
+.pill-amber { background: var(--amber); color: white; }
+.pill-green { background: var(--green); color: white; }
+.pill-yellow { background: var(--yellow); color: var(--black); }
+.pill-grey { background: var(--grey-line); color: var(--ink); }
+
+/* PROGRESS BAR */
+.bar-track { background: var(--grey-line); height: 6px; }
+.bar-fill { height: 6px; background: var(--green); }
+.bar-fill.fill-yellow { background: var(--yellow); }
+.bar-fill.fill-amber { background: var(--amber); }
+.bar-fill.fill-red { background: var(--red); }
+
+/* CITY RIBBON */
+.city-ribbon { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+.ribbon-card { background: white; border: 1px solid var(--grey-line); padding: 18px 22px; border-top: 4px solid var(--green); }
+.ribbon-card.worst { border-top-color: var(--red); }
+.ribbon-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--grey-text); margin-bottom: 12px;
+}
+.ribbon-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 6px 0; border-bottom: 1px dashed var(--grey-line); font-size: 13px;
+}
+.ribbon-row:last-child { border-bottom: 0; }
+.ribbon-row .city-name { font-family: 'Fraunces', serif; font-weight: 600; }
+.ribbon-row .city-val { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+
+/* COLOPHON */
+.colophon {
+  margin-top: 80px; padding-top: 32px;
+  border-top: 1px solid var(--grey-line);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: var(--grey-text);
+  letter-spacing: 0.5px;
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+
+@media (max-width: 1100px) {
+  .shell { grid-template-columns: 1fr; }
+  .sidenav { display: none; }
+  .hero-grid { grid-template-columns: 1fr; gap: 24px; }
+}
+@media (max-width: 700px) {
+  main { padding: 20px 24px 64px; }
+  .hero { padding: 36px 28px; margin: -20px -24px 36px; }
+  .grid-2, .grid-3-1 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="dot"></span>Student Cribs · Systems</div>
+  <div class="period">TIMESHEET ISSUES · 23–30 APR 2026</div>
+  <div class="crumb">Systems Dept</div>
+</div>
+
+<div class="shell">
+
+  <aside class="sidenav">
+    <h4>Sections</h4>
+    <a href="#overview" class="nav-active"><span class="num">01</span><span>Overview</span></a>
+    <a href="#urgency"><span class="num">02</span><span>Urgency</span></a>
+    <a href="#cities"><span class="num">03</span><span>Cities</span></a>
+    <a href="#categories"><span class="num">04</span><span>Categories</span></a>
+    <a href="#engineers"><span class="num">05</span><span>Engineers</span></a>
+  </aside>
+
+  <main>
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-grid">
+        <div>
+          <div class="kicker">Timesheet Issues · Week ending 30 Apr 2026</div>
+          <h1>127<span class="unit">issues</span></h1>
+          <div class="lede">Across 9 cities, 17 engineers — with 2 emergency escalations at Hope Court, Exeter requiring immediate attention.</div>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="label">Emergency</div>
+            <div class="value" style="color:#ef5350">2</div>
+            <div class="sub">Exeter — Hope Court</div>
+          </div>
+          <div class="hero-stat">
+            <div class="label">Urgent</div>
+            <div class="value" style="color:var(--amber)">38</div>
+            <div class="sub">30% of total</div>
+          </div>
+          <div class="hero-stat">
+            <div class="label">Engineers</div>
+            <div class="value">17</div>
+            <div class="sub">Active this week</div>
+          </div>
+          <div class="hero-stat">
+            <div class="label">Cities</div>
+            <div class="value">9</div>
+            <div class="sub">Newcastle to Exeter</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 01 OVERVIEW -->
+    <section id="overview">
+      <div class="section-num">01 — Overview</div>
+      <h2>At a glance</h2>
+      <p class="dek">Summary of all issues logged and resolved across the portfolio, 23–30 April 2026.</p>
+
+      <!-- Emergency alert -->
+      <div class="callout-red">
+        <div class="cr-label">⚡ Emergency</div>
+        <div class="cr-body">
+          <strong>Flat 9, Hope Court, Exeter</strong> — two linked emergencies logged.
+          <strong>Electrical:</strong> no power to kitchen wall sockets (mains supply failure).
+          <strong>Plumbing:</strong> boiler lost power as a direct result of the partial power cut — no hot water.
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi feature">
+          <div class="lbl">Total Issues</div>
+          <div class="val">127</div>
+          <div class="sub">23–30 Apr 2026</div>
+        </div>
+        <div class="kpi red">
+          <div class="lbl">Emergency</div>
+          <div class="val" style="color:var(--red)">2</div>
+          <div class="sub">Hope Court, Exeter</div>
+        </div>
+        <div class="kpi amber">
+          <div class="lbl">Urgent</div>
+          <div class="val" style="color:var(--amber)">38</div>
+          <div class="sub">29.9% of total</div>
+        </div>
+        <div class="kpi green">
+          <div class="lbl">Non Urgent</div>
+          <div class="val" style="color:var(--green)">11</div>
+          <div class="sub">8.7% of total</div>
+        </div>
+        <div class="kpi">
+          <div class="lbl">No Priority</div>
+          <div class="val">75</div>
+          <div class="sub">59.1% of total</div>
+        </div>
+        <div class="kpi">
+          <div class="lbl">PPM</div>
+          <div class="val">1</div>
+          <div class="sub">Planned maintenance</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 URGENCY -->
+    <section id="urgency">
+      <div class="section-num">02 — Urgency</div>
+      <h2>Priority breakdown</h2>
+      <p class="dek">How issues split by urgency — 40 issues flagged as urgent or emergency this week.</p>
+
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-title">Urgency distribution <span>by issue count</span></div>
+          <div class="chart-wrap" style="height:260px">
+            <canvas id="urgencyChart"></canvas>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Urgency breakdown</div>
+          <table class="data" style="margin-top:4px">
+            <thead>
+              <tr>
+                <th>Priority</th>
+                <th class="num">Count</th>
+                <th class="num">Share</th>
+                <th>Volume</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="pill pill-red">Emergency</span></td>
+                <td class="num">2</td>
+                <td class="num">1.6%</td>
+                <td><div class="bar-track"><div class="bar-fill fill-red" style="width:5%"></div></div></td>
+              </tr>
+              <tr>
+                <td><span class="pill pill-amber">Urgent</span></td>
+                <td class="num">38</td>
+                <td class="num">29.9%</td>
+                <td><div class="bar-track"><div class="bar-fill fill-amber" style="width:100%"></div></div></td>
+              </tr>
+              <tr>
+                <td><span class="pill pill-green">Non Urgent</span></td>
+                <td class="num">11</td>
+                <td class="num">8.7%</td>
+                <td><div class="bar-track"><div class="bar-fill" style="width:29%"></div></div></td>
+              </tr>
+              <tr>
+                <td><span class="pill pill-grey">No Priority</span></td>
+                <td class="num">75</td>
+                <td class="num">59.1%</td>
+                <td><div class="bar-track"><div class="bar-fill fill-yellow" style="width:197%"></div></div></td>
+              </tr>
+              <tr>
+                <td><span class="pill pill-yellow">PPM</span></td>
+                <td class="num">1</td>
+                <td class="num">0.8%</td>
+                <td><div class="bar-track"><div class="bar-fill fill-yellow" style="width:3%"></div></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 CITIES -->
+    <section id="cities">
+      <div class="section-num">03 — Cities</div>
+      <h2>Regional workload</h2>
+      <p class="dek">Newcastle and Manchester account for over half of all issues this week.</p>
+
+      <div class="city-ribbon">
+        <div class="ribbon-card">
+          <div class="ribbon-lbl">Highest volume</div>
+          <div class="ribbon-row"><span class="city-name">Newcastle</span><span class="city-val">38</span></div>
+          <div class="ribbon-row"><span class="city-name">Manchester</span><span class="city-val">31</span></div>
+          <div class="ribbon-row"><span class="city-name">Leeds</span><span class="city-val">16</span></div>
+        </div>
+        <div class="ribbon-card worst">
+          <div class="ribbon-lbl">Lowest volume</div>
+          <div class="ribbon-row"><span class="city-name">Durham</span><span class="city-val">3</span></div>
+          <div class="ribbon-row"><span class="city-name">Edinburgh</span><span class="city-val">4</span></div>
+          <div class="ribbon-row"><span class="city-name">Leicester</span><span class="city-val">5</span></div>
+        </div>
+      </div>
+
+      <div class="grid-3-1">
+        <div class="panel">
+          <div class="panel-title">Issues by city <span>bar chart</span></div>
+          <div class="chart-wrap" style="height:260px">
+            <canvas id="cityChart"></canvas>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">City detail</div>
+          <table class="data">
+            <thead>
+              <tr><th>City</th><th class="num">Issues</th><th class="num">%</th></tr>
+            </thead>
+            <tbody id="cityTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 CATEGORIES -->
+    <section id="categories">
+      <div class="section-num">04 — Categories</div>
+      <h2>Issue types</h2>
+      <p class="dek">Compliance and fire alarm work dominates — 68% of all issues logged this week.</p>
+
+      <div class="panel">
+        <div class="panel-title">Issue categories <span>by volume</span></div>
+        <div class="chart-wrap" style="height:280px">
+          <canvas id="categoryChart"></canvas>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Category</th>
+              <th class="num">Count</th>
+              <th class="num">Share</th>
+              <th>Volume</th>
+            </tr>
+          </thead>
+          <tbody id="catTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 05 ENGINEERS -->
+    <section id="engineers">
+      <div class="section-num">05 — Engineers</div>
+      <h2>Engineer output</h2>
+      <p class="dek">David Richardson leads with 19 issues completed — top 3 engineers account for 42 of 127 issues.</p>
+
+      <div class="grid-3-1">
+        <div class="panel">
+          <div class="panel-title">Output by engineer <span>top 10</span></div>
+          <div class="chart-wrap" style="height:300px">
+            <canvas id="engineerChart"></canvas>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Top performers</div>
+          <div style="margin-top:4px">
+            <div style="padding:12px 0;border-bottom:1px solid var(--grey-line)">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--grey-text)">1st</div>
+              <div style="font-family:'Fraunces',serif;font-weight:600;font-size:22px;margin:2px 0">David Richardson</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--grey-text)">19 issues</div>
+            </div>
+            <div style="padding:12px 0;border-bottom:1px solid var(--grey-line)">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--grey-text)">2nd</div>
+              <div style="font-family:'Fraunces',serif;font-weight:600;font-size:22px;margin:2px 0">Mark Allen</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--grey-text)">12 issues</div>
+            </div>
+            <div style="padding:12px 0">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--grey-text)">3rd</div>
+              <div style="font-family:'Fraunces',serif;font-weight:600;font-size:22px;margin:2px 0">Dan Richardson</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--grey-text)">11 issues</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table class="data">
+          <thead>
+            <tr>
+              <th class="rank">#</th>
+              <th>Engineer</th>
+              <th class="num">Issues</th>
+              <th>Volume</th>
+            </tr>
+          </thead>
+          <tbody id="engineerTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="colophon">
+      <span>Student Cribs · Systems Department</span>
+      <span>Data range: 23 Apr – 30 Apr 2026</span>
+      <span>127 issues · 9 cities · 17 engineers</span>
+      <span>api.student-cribs.com/api/xmls/timesheet-issues</span>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const YELLOW = '#FFCC00', TEAL = '#18706E', AMBER = '#FF8F00', RED = '#B71C1C', INK = '#1A1A1A', GREY = '#B5B5B0';
+
+Chart.defaults.font.family = "'Poppins', sans-serif";
+Chart.defaults.color = '#6A6A66';
+
+const cityData = {
+  labels: ['Newcastle','Manchester','Leeds','Exeter','Cardiff','Leicester','Nottingham','Edinburgh','Durham'],
+  counts: [38, 31, 16, 15, 10, 5, 5, 4, 3]
+};
+
+const engineers = [
+  { name: 'David Richardson', count: 19 },
+  { name: 'Mark Allen',       count: 12 },
+  { name: 'Dan Richardson',   count: 11 },
+  { name: 'Gavin Coles',      count: 10 },
+  { name: 'Mike Porter',      count: 10 },
+  { name: 'David Lakin',      count: 6  },
+  { name: 'Sam Carroll',      count: 5  },
+  { name: 'Chris Smith',      count: 5  },
+  { name: 'Marc Brackenbury', count: 4  },
+  { name: 'Dale McNeil',      count: 4  },
+  { name: 'Brian Mazzella',   count: 3  },
+  { name: 'Steven Hudspith',  count: 3  },
+  { name: 'Steve Pritchard',  count: 3  },
+  { name: 'Paul Addiscott',   count: 2  },
+  { name: 'Anthony Littlechild', count: 2 },
+  { name: 'Wayne Arnold',     count: 1  },
+  { name: 'John',             count: 1  },
+];
+
+const categories = [
+  { name: 'Fire Alarms',         count: 51 },
+  { name: 'Compliance Checks',   count: 24 },
+  { name: 'Other',               count: 20 },
+  { name: 'Compliance Other',    count: 11 },
+  { name: 'Internal',            count: 10 },
+  { name: 'Appliances',          count: 3  },
+  { name: 'Elevations / Doors',  count: 3  },
+  { name: 'Fixtures',            count: 3  },
+  { name: 'Services',            count: 2  },
+  { name: 'Electrical',          count: 2  },
+  { name: 'Plumbing',            count: 1  },
+];
+
+// City bar chart
+new Chart(document.getElementById('cityChart'), {
+  type: 'bar',
+  data: {
+    labels: cityData.labels,
+    datasets: [{
+      data: cityData.counts,
+      backgroundColor: cityData.labels.map((_, i) => i < 2 ? INK : i === 3 ? AMBER : TEAL),
+      borderRadius: 0, borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: '#E0DFD9' }, ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 } } },
+      x: { grid: { display: false }, ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 } } }
+    }
+  }
+});
+
+// Urgency doughnut
+new Chart(document.getElementById('urgencyChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['No Priority', 'Urgent', 'Non Urgent', 'Emergency', 'PPM'],
+    datasets: [{
+      data: [75, 38, 11, 2, 1],
+      backgroundColor: ['#E0DFD9', AMBER, TEAL, RED, YELLOW],
+      borderWidth: 2, borderColor: '#fff', hoverOffset: 6
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '58%',
+    plugins: { legend: { position: 'bottom', labels: { padding: 14, font: { family: "'JetBrains Mono', monospace", size: 10 }, boxWidth: 12 } } }
+  }
+});
+
+// Category horizontal bar
+new Chart(document.getElementById('categoryChart'), {
+  type: 'bar',
+  data: {
+    labels: categories.map(c => c.name),
+    datasets: [{
+      data: categories.map(c => c.count),
+      backgroundColor: INK,
+      borderRadius: 0, borderSkipped: false,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { beginAtZero: true, grid: { color: '#E0DFD9' }, ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 } } },
+      y: { grid: { display: false }, ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 } } }
+    }
+  }
+});
+
+// Engineer bar (top 10)
+const top10 = engineers.slice(0, 10);
+new Chart(document.getElementById('engineerChart'), {
+  type: 'bar',
+  data: {
+    labels: top10.map(e => e.name.split(' ')[0]),
+    datasets: [{
+      data: top10.map(e => e.count),
+      backgroundColor: top10.map((_, i) => i === 0 ? YELLOW : i < 3 ? INK : TEAL),
+      borderRadius: 0, borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: '#E0DFD9' }, ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 } } },
+      x: { grid: { display: false }, ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 } } }
+    }
+  }
+});
+
+// City table
+const total = cityData.counts.reduce((a, b) => a + b, 0);
+const cityTbody = document.getElementById('cityTableBody');
+cityData.labels.forEach((city, i) => {
+  const count = cityData.counts[i];
+  const pct = ((count / total) * 100).toFixed(1);
+  cityTbody.innerHTML += `<tr>
+    <td>${city}</td>
+    <td class="num">${count}</td>
+    <td class="num">${pct}%</td>
+  </tr>`;
+});
+
+// Category table
+const catMax = categories[0].count;
+const catTbody = document.getElementById('catTableBody');
+categories.forEach((cat, i) => {
+  const pct = ((cat.count / 127) * 100).toFixed(1);
+  const barPct = Math.round((cat.count / catMax) * 100);
+  catTbody.innerHTML += `<tr>
+    <td class="rank">${String(i+1).padStart(2,'0')}</td>
+    <td>${cat.name}</td>
+    <td class="num">${cat.count}</td>
+    <td class="num">${pct}%</td>
+    <td style="min-width:120px"><div class="bar-track"><div class="bar-fill" style="width:${barPct}%"></div></div></td>
+  </tr>`;
+});
+
+// Engineer table
+const engMax = engineers[0].count;
+const engTbody = document.getElementById('engineerTableBody');
+engineers.forEach((eng, i) => {
+  const barPct = Math.round((eng.count / engMax) * 100);
+  const fillClass = i === 0 ? 'fill-yellow' : i < 3 ? '' : '';
+  engTbody.innerHTML += `<tr>
+    <td class="rank">${String(i+1).padStart(2,'0')}</td>
+    <td>${eng.name}</td>
+    <td class="num">${eng.count}</td>
+    <td style="min-width:140px"><div class="bar-track"><div class="bar-fill ${fillClass}" style="width:${barPct}%"></div></div></td>
+  </tr>`;
+});
+
+// Sidenav active on scroll
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.sidenav a');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 80) current = s.id; });
+  navLinks.forEach(a => {
+    a.classList.toggle('nav-active', a.getAttribute('href') === '#' + current);
+  });
+});
+</script>
+</body>
+</html>
